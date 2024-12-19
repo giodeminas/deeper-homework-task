@@ -24,27 +24,32 @@ public class SecurityConfig {
 
   // Reduced whitelist for simplicity
   private static final String[] WHITE_LIST_URL = {
-      "/api/v1/auth/register",
-      "/api/v1/auth/login",
-      "/api/v1/intersect"
+      "/auth/register",
+      "/auth/login",
+      "/intersect"
   };
 
+  private final ApiBasePathConfig apiBasePathConfig;
   private final JwtAuthFilter jwtAuthFilter;
   private final UserService userService;
 
   @Autowired
-  public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserService userService) {
+  public SecurityConfig(ApiBasePathConfig apiBasePathConfig, JwtAuthFilter jwtAuthFilter,
+      UserService userService) {
+    this.apiBasePathConfig = apiBasePathConfig;
     this.jwtAuthFilter = jwtAuthFilter;
     this.userService = userService;
   }
 
   @Bean
   SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    String[] fullWhiteListUrls = apiBasePathConfig.getWhiteListUrls(WHITE_LIST_URL);
+
     return http
         .csrf(
             AbstractHttpConfigurer::disable) // Disabling CSRF as we use JWT which is immune to CSRF
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(WHITE_LIST_URL)
+            .requestMatchers(fullWhiteListUrls)
             .permitAll() // Whitelisting some paths from authentication
             .anyRequest().authenticated()) // All other requests must be authenticated
         .sessionManagement(session -> session
